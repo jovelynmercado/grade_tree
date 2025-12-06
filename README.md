@@ -52,7 +52,11 @@ Before you begin, ensure you have the following installed on your system:
 
 ## Installation & Setup
 
-### Step 1: Clone the Repository
+### 🚀 Quick Setup (Recommended)
+
+The easiest way to set up the project is to use the automated PowerShell setup script:
+
+#### Step 1: Clone the Repository
 
 ```bash
 # Navigate to where you want to store the project
@@ -65,7 +69,30 @@ git clone https://github.com/jovelynmercado/grade_tree.git
 cd grade_tree
 ```
 
-### Step 2: Install Dependencies
+#### Step 2: Run the Setup Script
+
+```powershell
+# Run the automated setup script
+.\setup.ps1
+```
+
+The setup script will automatically:
+1. ✅ Check for required prerequisites (Node.js, npm, Git)
+2. ✅ Verify your project directory
+3. ✅ Prompt for your DATABASE_URL and create `.env` file
+4. ✅ Clean previous build cache
+5. ✅ Install all dependencies
+6. ✅ Verify the installation
+
+**That's it!** The setup script handles everything. Just provide your DATABASE_URL when prompted.
+
+---
+
+### Manual Setup (If Setup Script Fails)
+
+If the `setup.ps1` script encounters issues, follow these manual steps:
+
+#### Step 3: Install Dependencies
 
 ```bash
 # Install all required npm packages
@@ -77,7 +104,7 @@ This will install:
 - **Backend**: Express.js, Drizzle ORM, PostgreSQL client
 - **Build Tools**: Vite, TypeScript, tsx compiler
 
-### Step 3: Configure Environment Variables
+#### Step 4: Configure Environment Variables
 
 Create a `.env` file in the root directory with the following variables:
 
@@ -100,7 +127,7 @@ NODE_ENV=development
 4. Replace `[PASSWORD]` with your actual password
 5. Paste the full URL as `DATABASE_URL` in your `.env` file
 
-### Step 4: Initialize the Database
+#### Step 5: Initialize the Database
 
 The database schema is automatically created when the server starts for the first time. The system uses Drizzle ORM to manage migrations.
 
@@ -110,7 +137,7 @@ If you need to manually push the schema:
 npm run db:push
 ```
 
-### Step 5: Seed Initial Data (Optional)
+#### Step 6: Seed Initial Data (Optional)
 
 To populate the database with sample data:
 
