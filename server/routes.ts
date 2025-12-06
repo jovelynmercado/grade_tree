@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./db-storage";
 import { z } from "zod";
 import {
   insertStudentSchema,
@@ -17,11 +17,48 @@ export async function registerRoutes(
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
       const parsed = loginSchema.parse(req.body);
-      const user = await storage.getUserByEmail(parsed.email);
+      let user = await storage.getUserByEmail(parsed.email);
 
-      if (!user || user.password !== parsed.password) {
+      // If user doesn't exist and it's a student email, create new student
+      if (!user) {
+        // Extract student ID from email (e.g., "2024-0001@school.com" -> "2024-0001")
+        const emailParts = parsed.email.split("@");
+        const studentId = emailParts[0]; // Use email prefix as student ID
+        const name = parsed.email.split("@")[0]; // Default name from email
+
+        // Create new student record
+        try {
+          await storage.createStudent({
+            studentId,
+            name,
+            email: parsed.email,
+            enrolledSubjects: [],
+            isActive: true,
+          });
+        } catch {
+          // Student might already exist, continue
+        }
+
+        // Create new user account
+        user = await storage.createUser({
+          email: parsed.email,
+          password: parsed.password,
+          role: "student",
+          name,
+          studentId,
+        });
+      } else if (user.password !== parsed.password) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
+
+      // Record login
+      await storage.recordLogin({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        ipAddress: req.ip || req.socket.remoteAddress || "unknown",
+        userAgent: req.get("user-agent") || "unknown",
+      });
 
       const { password, ...safeUser } = user;
       return res.json({ user: safeUser });
@@ -29,6 +66,7 @@ export async function registerRoutes(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.errors[0].message });
       }
+      console.error("Login error:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });

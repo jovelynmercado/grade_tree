@@ -30,7 +30,7 @@ export default function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: async (data: LoginCredentials) => {
       const response = await apiRequest("POST", "/api/auth/login", data);
-      return response;
+      return await response.json();
     },
     onSuccess: (data) => {
       login(data.user);
@@ -193,9 +193,6 @@ export default function LoginPage() {
             <div className="text-center text-sm text-muted-foreground space-y-1">
               <p>
                 <strong>Admin:</strong> admin@gmail.com / admin123
-              </p>
-              <p>
-                <strong>Student:</strong> student1@hcdc.edu.ph / student123
               </p>
             </div>
           </CardContent>
