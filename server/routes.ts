@@ -26,13 +26,17 @@ export async function registerRoutes(
         const studentId = emailParts[0]; // Use email prefix as student ID
         const name = parsed.email.split("@")[0]; // Default name from email
 
-        // Create new student record
+        // Get all subjects to enroll the new student
+        const subjects = await storage.getSubjects();
+        const subjectIds = subjects.map((s) => s.id);
+
+        // Create new student record with all subjects
         try {
           await storage.createStudent({
             studentId,
             name,
             email: parsed.email,
-            enrolledSubjects: [],
+            enrolledSubjects: subjectIds,
             isActive: true,
           });
         } catch {
@@ -142,6 +146,18 @@ export async function registerRoutes(
       return res.status(204).send();
     } catch (error) {
       return res.status(500).json({ message: "Failed to delete student" });
+    }
+  });
+
+  app.post("/api/students/:id/mark-read", async (req: Request, res: Response) => {
+    try {
+      const updated = await storage.markStudentAsRead(req.params.id);
+      if (!updated) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      return res.json(updated);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to mark student as read" });
     }
   });
 

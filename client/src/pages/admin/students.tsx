@@ -47,7 +47,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Search, Users, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Users, Loader2, Check } from "lucide-react";
 
 const studentFormSchema = z.object({
   studentId: z.string().min(1, "Student ID is required"),
@@ -127,6 +127,19 @@ export default function StudentsPage() {
     },
     onError: (error: Error) => {
       toast({ title: "Error deleting student", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("POST", `/api/students/${id}/mark-read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      toast({ title: "Student marked as read" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error marking student as read", description: error.message, variant: "destructive" });
     },
   });
 
@@ -389,7 +402,16 @@ export default function StudentsPage() {
                       <TableCell className="font-mono font-medium">
                         {student.studentId}
                       </TableCell>
-                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {student.name}
+                          {(student as any).isNew && (
+                            <Badge variant="destructive" size="sm">
+                              NEW
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{student.email}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" size="sm">
@@ -403,6 +425,17 @@ export default function StudentsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {(student as any).isNew && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => markAsReadMutation.mutate(student.id)}
+                              title="Mark as read"
+                              disabled={markAsReadMutation.isPending}
+                            >
+                              <Check className="w-4 h-4 text-green-600" />
+                            </Button>
+                          )}
                           <Button
                             size="icon"
                             variant="ghost"

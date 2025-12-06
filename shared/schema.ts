@@ -49,10 +49,13 @@ export const students = pgTable("students", {
   email: text("email").notNull().unique(),
   enrolledSubjects: text("enrolled_subjects").array().default([]),
   isActive: boolean("is_active").default(true),
+  isNew: boolean("is_new").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertStudentSchema = createInsertSchema(students).omit({
   id: true,
+  createdAt: true,
 });
 
 export type InsertStudent = z.infer<typeof insertStudentSchema>;

@@ -138,6 +138,15 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async markStudentAsRead(id: string): Promise<Student | undefined> {
+    const result = await db
+      .update(students)
+      .set({ isNew: false })
+      .where(eq(students.id, id))
+      .returning();
+    return result[0];
+  }
+
   async deleteStudent(id: string): Promise<boolean> {
     const result = await db.delete(students).where(eq(students.id, id));
     return true;
