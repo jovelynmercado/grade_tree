@@ -423,12 +423,6 @@ npm run check
 
 ### Admin Accounts
 
-**Super Admin (System Owner)**
-```
-Email: jovelynangel.mercado@hcdc.edu.ph
-Password: jovelynangel.mercado@hcdc.edu.ph
-```
-
 **Admin Account**
 ```
 Email: admin@gmail.com
@@ -436,29 +430,33 @@ Password: admin123
 ```
 
 ### Test Student Accounts
-The following students are created when you run `seed-students.js`:
+The following students are available to log in:
 
-1. **Alice Johnson**
+1. **Jovelyn Angel Mercado**
+   - Email: jovelynangel.mercado@hcdc.edu.ph
+   - Password: jovelynangel.mercado@hcdc.edu.ph
+
+2. **Alice Johnson**
    - Student ID: 2024-0001
    - Email: alice.johnson@hcdc.edu.ph
    - Password: password123
 
-2. **Bob Smith**
+3. **Bob Smith**
    - Student ID: 2024-0002
    - Email: bob.smith@hcdc.edu.ph
    - Password: password123
 
-3. **Carol White**
+4. **Carol White**
    - Student ID: 2024-0003
    - Email: carol.white@hcdc.edu.ph
    - Password: password123
 
-4. **David Brown**
+5. **David Brown**
    - Student ID: 2024-0004
    - Email: david.brown@hcdc.edu.ph
    - Password: password123
 
-5. **Emma Davis**
+6. **Emma Davis**
    - Student ID: 2024-0005
    - Email: emma.davis@hcdc.edu.ph
    - Password: password123
