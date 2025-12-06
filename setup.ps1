@@ -7,6 +7,22 @@ Write-Host "  GradeTree - Setup Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Make script tolerant: capture non-fatal problems and always exit 0
+$Script:SetupWarnings = @()
+
+function Add-Warning {
+    param([string]$message)
+    $Script:SetupWarnings += $message
+    Write-Host "⚠️  $message" -ForegroundColor Yellow
+}
+
+function Add-Info {
+    param([string]$message)
+    Write-Host "   $message"
+}
+
+try {
+
 # Check if running as Administrator
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 if (-not $isAdmin) {
@@ -61,21 +77,25 @@ foreach ($cmd in $prerequisites.Keys) {
 
 if ($missingPrereqs.Count -gt 0) {
     Write-Host ""
-    Write-Host "⚠️  Missing prerequisites:" -ForegroundColor Red
+    Add-Warning "Missing prerequisites:"
     foreach ($prereq in $missingPrereqs) {
-        Write-Host "   - $prereq" -ForegroundColor Red
+        Add-Info "- $prereq"
     }
     Write-Host ""
-    Write-Host "Please install the missing prerequisites:" -ForegroundColor Yellow
-    Write-Host "  1. Node.js: https://nodejs.org/en" -ForegroundColor Yellow
-    Write-Host "  2. Git: https://git-scm.com/downloads/win" -ForegroundColor Yellow
+    Add-Info "Please install the missing prerequisites or continue at your own risk:"
+    Add-Info "  1. Node.js: https://nodejs.org/en"
+    Add-Info "  2. Git: https://git-scm.com/downloads/win"
     Write-Host ""
-    Write-Host "Setup cancelled." -ForegroundColor Red
-    exit 1
+    $r = Read-Host "Continue anyway? (y/n)"
+    if ($r -ne 'y' -and $r -ne 'Y') {
+        throw "User cancelled due to missing prerequisites"
+    } else {
+        Add-Warning "Proceeding despite missing prerequisites. Some steps may fail."
+    }
+} else {
+    Write-Host "" 
+    Write-Host "✅ All prerequisites are installed!" -ForegroundColor Green
 }
-
-Write-Host ""
-Write-Host "✅ All prerequisites are installed!" -ForegroundColor Green
 
 # ============================================================
 # STEP 2: Verify Project Directory
@@ -83,13 +103,17 @@ Write-Host "✅ All prerequisites are installed!" -ForegroundColor Green
 Write-Section "Step 2: Verifying Project Directory"
 
 if (-not (Test-Path "package.json")) {
-    Write-Host "❌ package.json not found!" -ForegroundColor Red
-    Write-Host "   Please run this script from the project root directory." -ForegroundColor Red
-    exit 1
+    Add-Warning "package.json not found. Are you in the project root?"
+    $r = Read-Host "Continue anyway? (y/n)"
+    if ($r -ne 'y' -and $r -ne 'Y') {
+        throw "User cancelled: not in project root"
+    } else {
+        Add-Warning "Proceeding - many steps may fail if not in project root"
+    }
+} else {
+    Write-Host "✅ Project directory verified" -ForegroundColor Green
+    Write-Host "   Location: $(Get-Location)" -ForegroundColor Green
 }
-
-Write-Host "✅ Project directory verified" -ForegroundColor Green
-Write-Host "   Location: $(Get-Location)" -ForegroundColor Green
 
 # ============================================================
 # STEP 3: Check and Create .env File
@@ -105,12 +129,19 @@ if (Test-Path ".env") {
     Write-Host "Creating .env file..." -ForegroundColor Cyan
     Write-Host ""
     
-    $databaseUrl = Read-Host "Enter your DATABASE_URL (from Neon or PostgreSQL)"
-    
+    $attempts = 0
+    do {
+        $databaseUrl = Read-Host "Enter your DATABASE_URL (from Neon or PostgreSQL)"
+        $attempts++
+        if ([string]::IsNullOrWhiteSpace($databaseUrl)) {
+            Add-Warning "DATABASE_URL cannot be empty (attempt $attempts of 3)."
+            if ($attempts -lt 3) { Add-Info "Please re-enter the DATABASE_URL." }
+        }
+    } while ([string]::IsNullOrWhiteSpace($databaseUrl) -and $attempts -lt 3)
+
     if ([string]::IsNullOrWhiteSpace($databaseUrl)) {
-        Write-Host "❌ DATABASE_URL cannot be empty!" -ForegroundColor Red
-        Write-Host "   Get your DATABASE_URL from: https://neon.tech" -ForegroundColor Yellow
-        exit 1
+        Add-Warning "DATABASE_URL left empty after multiple attempts. Using placeholder value."
+        $databaseUrl = "postgresql://user:password@localhost:5432/grade_tree?sslmode=disable"
     }
     
     $envContent = @"
@@ -124,8 +155,12 @@ PORT=5000
 NODE_ENV=development
 "@
     
-    $envContent | Out-File -FilePath ".env" -Encoding UTF8
-    Write-Host "✅ .env file created successfully" -ForegroundColor Green
+    try {
+        $envContent | Out-File -FilePath ".env" -Encoding UTF8 -Force
+        Write-Host "✅ .env file created successfully" -ForegroundColor Green
+    } catch {
+        Add-Warning "Failed to write .env file: $_"
+    }
 }
 
 # ============================================================
@@ -158,17 +193,16 @@ Write-Section "Step 5: Installing Dependencies"
 Write-Host "Running: npm install" -ForegroundColor Cyan
 Write-Host ""
 
-npm install
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host ""
-    Write-Host "❌ npm install failed!" -ForegroundColor Red
-    Write-Host "   Please check the errors above and try again." -ForegroundColor Red
-    exit 1
+try {
+    npm install
+    if ($LASTEXITCODE -ne 0) {
+        Add-Warning "npm install reported errors (exit code $LASTEXITCODE). Please inspect output above. Continuing anyway."
+    } else {
+        Write-Host ""; Write-Host "✅ Dependencies installed successfully" -ForegroundColor Green
+    }
+} catch {
+    Add-Warning "npm install failed with exception: $_. Continuing anyway."
 }
-
-Write-Host ""
-Write-Host "✅ Dependencies installed successfully" -ForegroundColor Green
 
 # ============================================================
 # STEP 6: Verify Setup
@@ -196,8 +230,7 @@ foreach ($file in $requiredFiles) {
 
 if (-not $allFilesExist) {
     Write-Host ""
-    Write-Host "❌ Some required files are missing!" -ForegroundColor Red
-    exit 1
+    Add-Warning "Some required files are missing; the project may not run correctly. See list above."
 }
 
 # ============================================================
@@ -229,3 +262,38 @@ Write-Host ""
 Write-Host "📚 For more information, see README.md" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Happy coding! 🚀" -ForegroundColor Green
+
+} catch {
+    Add-Warning "Setup encountered an error: $_"
+} finally {
+    Write-Host ""
+    if ($Script:SetupWarnings.Count -gt 0) {
+        Write-Host "========================================" -ForegroundColor Yellow
+        Write-Host "  ⚠️  Setup finished with warnings" -ForegroundColor Yellow
+        Write-Host "========================================" -ForegroundColor Yellow
+        foreach ($w in $Script:SetupWarnings) { Write-Host "- $w" -ForegroundColor Yellow }
+    } else {
+        Write-Host "========================================" -ForegroundColor Green
+        Write-Host "  ✅ Setup finished (no warnings)" -ForegroundColor Green
+        Write-Host "========================================" -ForegroundColor Green
+    }
+
+    Write-Host ""
+    Write-Host "Note: This script is designed to be idempotent and tolerant. If something didn't complete, check the messages above and re-run." -ForegroundColor Cyan
+    
+    # Prompt to start dev server in the current terminal (no new window)
+    $startDev = Read-Host "Start dev server now in this terminal? (Y/n)"
+    if ([string]::IsNullOrWhiteSpace($startDev) -or $startDev -eq 'y' -or $startDev -eq 'Y') {
+        try {
+            Write-Host "Starting dev server in current terminal (use Ctrl+C to stop)." -ForegroundColor Cyan
+            npm run dev
+        } catch {
+            Add-Warning "Failed to start dev server in current terminal: $_"
+            Add-Info "You can start it manually by running: npm run dev"
+        }
+    } else {
+        Add-Info "Skipping dev server start. Run npm run dev to start manually."
+    }
+
+    exit 0
+}
