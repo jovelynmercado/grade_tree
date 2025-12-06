@@ -299,7 +299,11 @@ This will:
 - Start Vite dev server with hot module reloading
 - Connect to your PostgreSQL database
 
-The application will be available at: **http://127.0.0.1:5000**
+### Access the Application
+
+**The application will be available at:** http://127.0.0.1:5000
+
+> **💡 Tip:** If you're unsure where to go, just navigate to http://127.0.0.1:5000/ in your browser and you'll be redirected to the login page.
 
 ### Production Build
 
