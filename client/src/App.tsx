@@ -17,7 +17,9 @@ import AdminAssessments from "@/pages/admin/assessments";
 import AdminGrades from "@/pages/admin/grades";
 import AdminBST from "@/pages/admin/bst";
 import AdminAnalytics from "@/pages/admin/analytics";
+import AdminWelcome from "@/pages/admin/welcome";
 import StudentDashboard from "@/pages/student/dashboard";
+import StudentWelcome from "@/pages/student/welcome";
 
 function LoadingScreen() {
   return (
@@ -51,9 +53,9 @@ function ProtectedRoute({
 
   if (allowedRole && user.role !== allowedRole) {
     if (user.role === "admin") {
-      return <Redirect to="/admin" />;
+      return <Redirect to="/admin/welcome" />;
     }
-    return <Redirect to="/student" />;
+    return <Redirect to="/student/welcome" />;
   }
 
   return children;
@@ -98,9 +100,9 @@ function PublicRoute({ children }: { children: JSX.Element }) {
 
   if (user) {
     if (user.role === "admin") {
-      return <Redirect to="/admin" />;
+      return <Redirect to="/admin/welcome" />;
     }
-    return <Redirect to="/student" />;
+    return <Redirect to="/student/welcome" />;
   }
 
   return children;
@@ -113,6 +115,12 @@ function Router() {
         <PublicRoute>
           <LoginPage />
         </PublicRoute>
+      </Route>
+
+      <Route path="/admin/welcome">
+        <ProtectedRoute allowedRole="admin">
+          <AdminWelcome />
+        </ProtectedRoute>
       </Route>
 
       <Route path="/admin">
@@ -168,6 +176,12 @@ function Router() {
           <AdminLayout>
             <AdminAnalytics />
           </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/student/welcome">
+        <ProtectedRoute allowedRole="student">
+          <StudentWelcome />
         </ProtectedRoute>
       </Route>
 

@@ -39,9 +39,9 @@ export default function LoginPage() {
         description: `Logged in as ${data.user.name}`,
       });
       if (data.user.role === "admin") {
-        setLocation("/admin");
+        setLocation("/admin/welcome");
       } else {
-        setLocation("/student");
+        setLocation("/student/welcome");
       }
     },
     onError: (error: Error) => {
